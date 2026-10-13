@@ -22,13 +22,13 @@ export const metadata: Metadata = {
 };
 
 // The root layout wraps every page: header on top, page content, footer below.
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans text-stone-900">
         {/* Makes the cart available to every page. The catalogue summary is
             passed from the server so the cart can look up names and prices. */}
-        <CartProvider catalogue={getCartCatalogue()}>
+        <CartProvider catalogue={await getCartCatalogue()}>
           <SiteHeader />
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12">{children}</main>
           <SiteFooter />

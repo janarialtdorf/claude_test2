@@ -1,176 +1,115 @@
-// DEMO DATA — these products are samples for a learning project, not real items.
+// Catalogue data access. This is the ONLY place that reads products from the
+// database; pages and components call the functions below.
 //
-// This file is the single source of truth for the catalogue (names, prices,
-// sizes). Pages read data only through the functions at the bottom, so we can
-// later swap this array for a database without rewriting every page.
+// The whole (small) catalogue is loaded with one cached query. "use cache"
+// stores the result on the server, and cacheLife("minutes") refreshes it at
+// most about once a minute — so visitors don't each trigger a database query,
+// but stock changes still show up quickly.
+//
+// Note: loading everything at once is fine for a few dozen products. A large
+// shop would query only what each page needs.
 
+import { cacheLife } from "next/cache";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CartCatalogue } from "@/types/cart";
 import type { Category, Product, Size } from "@/types/product";
 
-const categories: Category[] = [
-  {
-    id: "cat-tops",
-    slug: "tops",
-    name: "Tops",
-    description: "T-shirts, long-sleeves and shirts.",
-  },
-  {
-    id: "cat-bottoms",
-    slug: "bottoms",
-    name: "Bottoms",
-    description: "Trousers, jeans and skirts.",
-  },
-  {
-    id: "cat-outerwear",
-    slug: "outerwear",
-    name: "Outerwear",
-    description: "Jackets and coats.",
-  },
-];
+const SIZE_ORDER: Size[] = ["XS", "S", "M", "L", "XL"];
 
-const ALL_SIZES: Size[] = ["XS", "S", "M", "L", "XL"];
-
-// Helper to build size variants. Any size listed in `soldOut` is marked unavailable.
-function sizes(productId: string, soldOut: Size[] = []) {
-  return ALL_SIZES.map((size) => ({
-    id: `${productId}-${size.toLowerCase()}`,
-    size,
-    availability: soldOut.includes(size) ? ("sold_out" as const) : ("in_stock" as const),
-  }));
+interface Catalogue {
+  categories: Category[];
+  products: Product[];
 }
 
-const products: Product[] = [
-  {
-    id: "p-001",
-    slug: "classic-cotton-t-shirt",
-    name: "Classic Cotton T-Shirt",
-    description: "A plain crew-neck T-shirt with a regular fit.",
-    priceCents: 1999,
-    currency: "EUR",
-    categorySlug: "tops",
-    colorName: "Off-white",
-    placeholderColor: "#e9e4d8",
-    featured: true,
-    variants: sizes("p-001", ["XL"]),
-  },
-  {
-    id: "p-002",
-    slug: "striped-long-sleeve-tee",
-    name: "Striped Long-Sleeve Tee",
-    description: "A long-sleeve top with horizontal stripes.",
-    priceCents: 2799,
-    currency: "EUR",
-    categorySlug: "tops",
-    colorName: "Navy / white",
-    placeholderColor: "#33415e",
-    featured: false,
-    variants: sizes("p-002"),
-  },
-  {
-    id: "p-003",
-    slug: "linen-button-up-shirt",
-    name: "Linen Button-Up Shirt",
-    description: "A relaxed button-up shirt with a classic collar.",
-    priceCents: 4499,
-    currency: "EUR",
-    categorySlug: "tops",
-    colorName: "Sage",
-    placeholderColor: "#a3b18a",
-    featured: true,
-    variants: sizes("p-003", ["S"]),
-  },
-  {
-    id: "p-004",
-    slug: "relaxed-chino-trousers",
-    name: "Relaxed Chino Trousers",
-    description: "Chino trousers with a relaxed, straight leg.",
-    priceCents: 4999,
-    currency: "EUR",
-    categorySlug: "bottoms",
-    colorName: "Khaki",
-    placeholderColor: "#c4b48a",
-    featured: false,
-    variants: sizes("p-004"),
-  },
-  {
-    id: "p-005",
-    slug: "straight-leg-jeans",
-    name: "Straight-Leg Jeans",
-    description: "Five-pocket jeans with a straight leg.",
-    priceCents: 5999,
-    currency: "EUR",
-    categorySlug: "bottoms",
-    colorName: "Indigo",
-    placeholderColor: "#3d4b6e",
-    featured: true,
-    variants: sizes("p-005", ["M"]),
-  },
-  {
-    id: "p-006",
-    slug: "pleated-midi-skirt",
-    name: "Pleated Midi Skirt",
-    description: "A pleated skirt that falls below the knee.",
-    priceCents: 3999,
-    currency: "EUR",
-    categorySlug: "bottoms",
-    colorName: "Terracotta",
-    placeholderColor: "#b5654a",
-    featured: false,
-    // Every size sold out, so we can test the "sold out" display.
-    variants: sizes("p-006", ["XS", "S", "M", "L", "XL"]),
-  },
-  {
-    id: "p-007",
-    slug: "quilted-lightweight-jacket",
-    name: "Quilted Lightweight Jacket",
-    description: "A light quilted jacket with a snap-button front.",
-    priceCents: 7999,
-    currency: "EUR",
-    categorySlug: "outerwear",
-    colorName: "Olive",
-    placeholderColor: "#5b6142",
-    featured: true,
-    variants: sizes("p-007"),
-  },
-  {
-    id: "p-008",
-    slug: "wool-blend-overcoat",
-    name: "Wool-Blend Overcoat",
-    description: "A knee-length overcoat with a notched collar.",
-    priceCents: 14999,
-    currency: "EUR",
-    categorySlug: "outerwear",
-    colorName: "Charcoal",
-    placeholderColor: "#3a3a3c",
-    featured: false,
-    variants: sizes("p-008", ["XS"]),
-  },
-];
+async function getCatalogue(): Promise<Catalogue> {
+  "use cache";
+  cacheLife("minutes");
+
+  const supabase = createSupabaseServerClient();
+
+  // Two queries run in parallel. Row Level Security on the database already
+  // hides unpublished products; the .eq() filter makes that explicit here too.
+  const [categoriesResult, productsResult] = await Promise.all([
+    supabase.from("categories").select("id, slug, name, description").order("sort_order"),
+    supabase
+      .from("products")
+      .select(
+        `id, slug, name, description, price_cents, currency, color_name,
+         placeholder_color, featured,
+         category:categories!inner ( slug, name ),
+         variants:product_variants ( id, size, in_stock )`,
+      )
+      .eq("is_published", true)
+      .order("sort_order"),
+  ]);
+
+  if (categoriesResult.error || productsResult.error) {
+    // Details go to the server log only; the visitor sees the friendly error page.
+    console.error("Failed to load catalogue", categoriesResult.error ?? productsResult.error);
+    throw new Error("Failed to load the product catalogue.");
+  }
+
+  const categories: Category[] = categoriesResult.data.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    description: row.description,
+  }));
+
+  const products: Product[] = productsResult.data.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    description: row.description,
+    priceCents: row.price_cents,
+    currency: row.currency,
+    categorySlug: row.category.slug,
+    categoryName: row.category.name,
+    colorName: row.color_name,
+    placeholderColor: row.placeholder_color,
+    featured: row.featured,
+    variants: row.variants
+      // The database CHECK constraint only allows these sizes; this filter
+      // also tells TypeScript that `size` is one of them.
+      .filter((variant): variant is typeof variant & { size: Size } =>
+        SIZE_ORDER.includes(variant.size as Size),
+      )
+      .sort((a, b) => SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size))
+      .map((variant) => ({
+        id: variant.id,
+        size: variant.size,
+        // Only an explicit `true` counts as in stock (the type allows null).
+        availability: variant.in_stock === true ? "in_stock" : "sold_out",
+      })),
+  }));
+
+  return { categories, products };
+}
 
 // ---- Data access functions (the only way pages should read catalogue data) ----
 
-export function getCategories(): Category[] {
-  return categories;
+export async function getCategories(): Promise<Category[]> {
+  return (await getCatalogue()).categories;
 }
 
-export function getCategoryBySlug(slug: string): Category | undefined {
-  return categories.find((category) => category.slug === slug);
+export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
+  return (await getCategories()).find((category) => category.slug === slug);
 }
 
-export function getAllProducts(): Product[] {
-  return products;
+export async function getAllProducts(): Promise<Product[]> {
+  return (await getCatalogue()).products;
 }
 
-export function getProductsByCategory(categorySlug: string): Product[] {
-  return products.filter((product) => product.categorySlug === categorySlug);
+export async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
+  return (await getAllProducts()).filter((product) => product.categorySlug === categorySlug);
 }
 
-export function getFeaturedProducts(): Product[] {
-  return products.filter((product) => product.featured);
+export async function getFeaturedProducts(): Promise<Product[]> {
+  return (await getAllProducts()).filter((product) => product.featured);
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find((product) => product.slug === slug);
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  return (await getAllProducts()).find((product) => product.slug === slug);
 }
 
 // A product counts as available if at least one size is in stock.
@@ -180,10 +119,10 @@ export function isProductAvailable(product: Product): boolean {
 
 // The small summary of every variant that the browser cart needs.
 // The server passes this to client components, so they never import this
-// file directly — which lets us move the catalogue into a database later.
-export function getCartCatalogue(): CartCatalogue {
+// file (or the database client) directly.
+export async function getCartCatalogue(): Promise<CartCatalogue> {
   const catalogue: CartCatalogue = {};
-  for (const product of products) {
+  for (const product of await getAllProducts()) {
     for (const variant of product.variants) {
       catalogue[variant.id] = {
         variantId: variant.id,

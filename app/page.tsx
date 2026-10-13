@@ -4,9 +4,8 @@ import { copy } from "@/lib/copy";
 import { getCategories, getFeaturedProducts } from "@/lib/products";
 
 // Home page: brand intro, category links and featured products.
-export default function HomePage() {
-  const categories = getCategories();
-  const featured = getFeaturedProducts();
+export default async function HomePage() {
+  const [categories, featured] = await Promise.all([getCategories(), getFeaturedProducts()]);
 
   return (
     <div className="space-y-16">

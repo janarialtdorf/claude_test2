@@ -5,25 +5,20 @@ import { AddToCart } from "@/components/AddToCart";
 import { ProductPlaceholder } from "@/components/ProductPlaceholder";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
-import {
-  getAllProducts,
-  getCategoryBySlug,
-  getProductBySlug,
-  isProductAvailable,
-} from "@/lib/products";
+import { getAllProducts, getProductBySlug, isProductAvailable } from "@/lib/products";
 import type { Product } from "@/types/product";
 
 // Tells Next.js every product slug at build time, so each product page can be
 // pre-built as static HTML. Unknown slugs are handled below with notFound().
-export function generateStaticParams() {
-  return getAllProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  return (await getAllProducts()).map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   return { title: product ? product.name : copy.notFound.productTitle };
 }
 
@@ -35,7 +30,7 @@ export const instant = false;
 
 export default async function ProductPage({ params }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   // Shows app/products/[slug]/not-found.tsx with a 404 status.
   if (!product) notFound();
@@ -54,7 +49,6 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 }
 
 function ProductDetails({ product }: { product: Product }) {
-  const category = getCategoryBySlug(product.categorySlug);
   const available = isProductAvailable(product);
 
   return (
@@ -64,14 +58,12 @@ function ProductDetails({ product }: { product: Product }) {
       </div>
 
       <div>
-        {category && (
-          <Link
-            href={`/products?category=${category.slug}`}
-            className="text-sm uppercase tracking-wide text-stone-500 hover:text-stone-900 hover:underline"
-          >
-            {category.name}
-          </Link>
-        )}
+        <Link
+          href={`/products?category=${product.categorySlug}`}
+          className="text-sm uppercase tracking-wide text-stone-500 hover:text-stone-900 hover:underline"
+        >
+          {product.categoryName}
+        </Link>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{product.name}</h1>
         <p className="mt-3 text-2xl text-stone-800">
           {formatPrice(product.priceCents, product.currency)}

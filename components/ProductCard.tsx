@@ -2,11 +2,10 @@ import Link from "next/link";
 import { ProductPlaceholder } from "@/components/ProductPlaceholder";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
-import { getCategoryBySlug, isProductAvailable } from "@/lib/products";
+import { isProductAvailable } from "@/lib/products";
 import type { Product } from "@/types/product";
 
 export function ProductCard({ product }: { product: Product }) {
-  const category = getCategoryBySlug(product.categorySlug);
   const available = isProductAvailable(product);
 
   return (
@@ -21,9 +20,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
       <div className="mt-3 space-y-1">
-        {category && (
-          <p className="text-xs uppercase tracking-wide text-stone-500">{category.name}</p>
-        )}
+        <p className="text-xs uppercase tracking-wide text-stone-500">{product.categoryName}</p>
         <h3 className="font-medium text-stone-900 group-hover:underline">{product.name}</h3>
         <p className="text-stone-700">
           {formatPrice(product.priceCents, product.currency)}

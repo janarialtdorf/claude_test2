@@ -4,10 +4,10 @@ import { MobileMenu, type NavLink } from "@/components/MobileMenu";
 import { copy } from "@/lib/copy";
 import { getCategories } from "@/lib/products";
 
-export function SiteHeader() {
+export async function SiteHeader() {
   const links: NavLink[] = [
     { href: "/products", label: copy.nav.shopAll },
-    ...getCategories().map((category) => ({
+    ...(await getCategories()).map((category) => ({
       href: `/products?category=${category.slug}`,
       label: category.name,
     })),

@@ -3,12 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ProductGrid, ProductGridSkeleton } from "@/components/ProductGrid";
 import { copy } from "@/lib/copy";
-import {
-  getAllProducts,
-  getCategories,
-  getCategoryBySlug,
-  getProductsByCategory,
-} from "@/lib/products";
+import { getAllProducts, getCategories, getProductsByCategory } from "@/lib/products";
+import type { Category } from "@/types/product";
 
 export const metadata: Metadata = {
   title: copy.listing.title,
@@ -45,15 +41,16 @@ async function FilteredProducts({
   // We only accept a single string and treat anything else as "no filter".
   const categorySlug = typeof params.category === "string" ? params.category : undefined;
 
-  const activeCategory = categorySlug ? getCategoryBySlug(categorySlug) : undefined;
+  const categories = await getCategories();
+  const activeCategory = categories.find((category) => category.slug === categorySlug);
   const isUnknownCategory = categorySlug !== undefined && !activeCategory;
   const products = activeCategory
-    ? getProductsByCategory(activeCategory.slug)
-    : getAllProducts();
+    ? await getProductsByCategory(activeCategory.slug)
+    : await getAllProducts();
 
   return (
     <>
-      <CategoryNav activeSlug={activeCategory?.slug} />
+      <CategoryNav categories={categories} activeSlug={activeCategory?.slug} />
 
       {isUnknownCategory ? (
         <EmptyState message={copy.listing.unknownCategory} />
@@ -71,10 +68,16 @@ async function FilteredProducts({
   );
 }
 
-function CategoryNav({ activeSlug }: { activeSlug?: string }) {
+function CategoryNav({
+  categories,
+  activeSlug,
+}: {
+  categories: Category[];
+  activeSlug?: string;
+}) {
   const items = [
     { href: "/products", label: copy.listing.allCategories, active: !activeSlug },
-    ...getCategories().map((category) => ({
+    ...categories.map((category) => ({
       href: `/products?category=${category.slug}`,
       label: category.name,
       active: category.slug === activeSlug,
