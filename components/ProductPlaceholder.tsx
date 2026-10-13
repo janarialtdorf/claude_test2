@@ -7,10 +7,13 @@ export function ProductPlaceholder({
   name,
   color,
   decorative = false,
+  showLabel = true,
 }: {
   name: string;
   color: string;
   decorative?: boolean;
+  // Small thumbnails (e.g. in the cart) hide the label; it doesn't fit there.
+  showLabel?: boolean;
 }) {
   return (
     <div
@@ -20,9 +23,11 @@ export function ProductPlaceholder({
         ? { "aria-hidden": true }
         : { role: "img", "aria-label": copy.product.placeholderImage(name) })}
     >
-      <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-stone-800">
-        {copy.product.demoLabel}
-      </span>
+      {showLabel && (
+        <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-stone-800">
+          {copy.product.demoLabel}
+        </span>
+      )}
     </div>
   );
 }

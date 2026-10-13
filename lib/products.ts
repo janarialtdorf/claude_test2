@@ -4,6 +4,7 @@
 // sizes). Pages read data only through the functions at the bottom, so we can
 // later swap this array for a database without rewriting every page.
 
+import type { CartCatalogue } from "@/types/cart";
 import type { Category, Product, Size } from "@/types/product";
 
 const categories: Category[] = [
@@ -175,4 +176,26 @@ export function getProductBySlug(slug: string): Product | undefined {
 // A product counts as available if at least one size is in stock.
 export function isProductAvailable(product: Product): boolean {
   return product.variants.some((variant) => variant.availability === "in_stock");
+}
+
+// The small summary of every variant that the browser cart needs.
+// The server passes this to client components, so they never import this
+// file directly — which lets us move the catalogue into a database later.
+export function getCartCatalogue(): CartCatalogue {
+  const catalogue: CartCatalogue = {};
+  for (const product of products) {
+    for (const variant of product.variants) {
+      catalogue[variant.id] = {
+        variantId: variant.id,
+        productSlug: product.slug,
+        productName: product.name,
+        size: variant.size,
+        priceCents: product.priceCents,
+        currency: product.currency,
+        available: variant.availability === "in_stock",
+        placeholderColor: product.placeholderColor,
+      };
+    }
+  }
+  return catalogue;
 }

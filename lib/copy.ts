@@ -36,15 +36,48 @@ export const copy = {
   },
   product: {
     backToProducts: "Back to all products",
-    sizes: "Sizes",
     soldOut: "Sold out",
-    sizeSoldOut: "sold out",
     available: "Available",
     color: "Colour",
-    orderingUnavailable:
-      "Online ordering isn't available yet in this demo store.",
     placeholderImage: (name: string) => `Placeholder image for ${name}`,
     demoLabel: "Demo product",
+  },
+  addToCart: {
+    sizeLegend: "Size",
+    sizeSoldOut: "sold out",
+    button: "Add to cart",
+    selectSizeError: "Please select a size.",
+    added: (name: string, size: string) => `Added ${name} (size ${size}) to your cart.`,
+    limitReached: (max: number) =>
+      `You already have the maximum of ${max} of this item in your cart.`,
+    viewCart: "View cart",
+    productSoldOut: "This product is sold out in all sizes.",
+    demoNote: "Demo store: adding to the cart doesn't reserve stock.",
+  },
+  cart: {
+    title: "Your cart",
+    linkLabel: "Cart",
+    linkLabelWithCount: (count: number) =>
+      count === 1 ? "Cart, 1 item" : `Cart, ${count} items`,
+    loading: "Loading your cart…",
+    empty: "Your cart is empty.",
+    browseProducts: "Browse products",
+    size: "Size",
+    quantity: "Quantity",
+    quantityFor: (name: string, size: string) => `Quantity for ${name}, size ${size}`,
+    remove: "Remove",
+    removeLabel: (name: string, size: string) => `Remove ${name}, size ${size}, from cart`,
+    each: "each",
+    summary: "Cart summary",
+    subtotal: "Subtotal",
+    unavailableNotice: (count: number) =>
+      count === 1
+        ? "1 item in your cart is no longer available and isn't shown."
+        : `${count} items in your cart are no longer available and aren't shown.`,
+    dismissNotice: "Remove unavailable items",
+    notAnOrder:
+      "This is a demo cart, not an order. Nothing is reserved, and shipping isn't included.",
+    checkoutComing: "Checkout isn't available yet in this demo store.",
   },
   notFound: {
     productTitle: "Product not found",

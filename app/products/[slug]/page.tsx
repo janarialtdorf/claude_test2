@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddToCart } from "@/components/AddToCart";
 import { ProductPlaceholder } from "@/components/ProductPlaceholder";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
@@ -86,34 +87,14 @@ function ProductDetails({ product }: { product: Product }) {
           <dd className="inline text-stone-700">{product.colorName}</dd>
         </dl>
 
-        <section aria-labelledby="sizes-heading" className="mt-8">
-          <h2 id="sizes-heading" className="text-sm font-medium">
-            {copy.product.sizes}
-          </h2>
-          {/* A plain list for now: choosing a size arrives together with the cart. */}
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {product.variants.map((variant) => {
-              const soldOut = variant.availability === "sold_out";
-              return (
-                <li
-                  key={variant.id}
-                  className={`min-w-12 rounded-md border px-3 py-2 text-center text-sm ${
-                    soldOut
-                      ? "border-stone-200 bg-stone-50 text-stone-400 line-through"
-                      : "border-stone-400 text-stone-900"
-                  }`}
-                >
-                  {variant.size}
-                  {soldOut && <span className="sr-only"> ({copy.product.sizeSoldOut})</span>}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        <p className="mt-8 rounded-md bg-stone-100 px-4 py-3 text-sm text-stone-700">
-          {copy.product.orderingUnavailable}
-        </p>
+        <AddToCart
+          productName={product.name}
+          sizes={product.variants.map((variant) => ({
+            variantId: variant.id,
+            size: variant.size,
+            available: variant.availability === "in_stock",
+          }))}
+        />
       </div>
     </div>
   );

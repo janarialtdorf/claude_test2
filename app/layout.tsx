@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { CartProvider } from "@/components/CartProvider";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { copy } from "@/lib/copy";
+import { getCartCatalogue } from "@/lib/products";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,9 +26,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans text-stone-900">
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12">{children}</main>
-        <SiteFooter />
+        {/* Makes the cart available to every page. The catalogue summary is
+            passed from the server so the cart can look up names and prices. */}
+        <CartProvider catalogue={getCartCatalogue()}>
+          <SiteHeader />
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12">{children}</main>
+          <SiteFooter />
+        </CartProvider>
       </body>
     </html>
   );

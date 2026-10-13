@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CartLink } from "@/components/CartLink";
 import { MobileMenu, type NavLink } from "@/components/MobileMenu";
 import { copy } from "@/lib/copy";
 import { getCategories } from "@/lib/products";
@@ -42,7 +43,10 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        <MobileMenu links={links} />
+        <div className="flex items-center gap-1">
+          <CartLink />
+          <MobileMenu links={links} />
+        </div>
       </div>
     </header>
   );
