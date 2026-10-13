@@ -32,6 +32,8 @@ dashboard → Project Settings → API Keys:
   public by design, used to read the catalogue.
 - `SUPABASE_SECRET_KEY` — **secret**, used only on the server to place orders.
   Never commit it, share it, or give it a `NEXT_PUBLIC_` prefix.
+- `RATE_LIMIT_SECRET` — **secret**, any long random value (the command is in
+  `.env.example`). Used to hash visitor IPs for rate limiting.
 
 `.env.local` is ignored by Git.
 
@@ -70,6 +72,29 @@ public at all.
 only the server (secret key) may call. In one transaction it checks the items
 and stock, takes prices from the `products` table, saves the order with
 price/name snapshots, and reduces stock. If anything fails, nothing is saved.
+
+## Rate limiting
+
+Checkout attempts are limited (settings in `lib/rate-limit.ts`):
+
+- **Per visitor: 5 order attempts per 10 minutes**
+- **Whole shop: 50 order attempts per 10 minutes** (all visitors together)
+
+Only attempts that pass form validation count, so fixing typos is free.
+Counters live in the `rate_limit_counters` table and are updated atomically by
+the database function `consume_rate_limit` ("fixed window" counting). Both are
+accessible only to the server.
+
+**Privacy:** visitors are identified by an HMAC hash of their IP address
+(using `RATE_LIMIT_SECRET`); raw IPs are never stored, and counters older than
+a day are deleted automatically.
+
+**Before deploying:** the visitor's IP is read from the `x-forwarded-for`
+header. Locally, anyone can fake that header to look like a new visitor —
+the shop-wide limit is the backstop for that. On a hosting platform, confirm
+that the platform sets this header itself (and strips client-sent values)
+before relying on the per-visitor limit. A CAPTCHA (e.g. Cloudflare
+Turnstile) would add protection against bots; it's not included yet.
 
 `npm run build` loads the catalogue from Supabase, so it needs internet access
 and the variables in `.env.local`.
@@ -111,6 +136,8 @@ lib/supabase/server.ts    Server-only Supabase client (publishable key, read-onl
 lib/supabase/admin.ts     Server-only Supabase client (secret key, places orders)
 lib/checkout.ts           Checkout validation rules (Zod)
 lib/checkout.test.ts      Unit tests for the checkout validation
+lib/rate-limit.ts         Rate-limit settings, IP + hashing helpers
+lib/rate-limit.test.ts    Unit tests for the rate-limit helpers
 lib/cart.ts               Cart logic as pure functions (add, update, subtotal…)
 lib/cart.test.ts          Unit tests for the cart logic
 lib/copy.ts               All visible text (brand name, labels) in one place
@@ -169,11 +196,15 @@ Done (checkout):
   order creation in one transaction (prices, totals and stock checked in the
   database), stock reduced on order, demo confirmation, cart cleared.
 
+Done (rate limiting):
+
+- Per-visitor and shop-wide limits on checkout attempts, stored in the
+  database with hashed visitor IDs.
+
 Not built yet / known gaps:
 
 - Real payments, order emails, accounts, order history
-- **Rate limiting** — required before any public deployment (anyone could
-  otherwise spam demo orders and use up the demo stock)
+- CAPTCHA / bot protection (planned option: Cloudflare Turnstile)
 - Double submits are blocked in the browser; a server-side idempotency key
   would also protect against network retries
 - Sorting, real product images, informational pages (About, Shipping…)

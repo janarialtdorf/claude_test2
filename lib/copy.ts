@@ -114,6 +114,8 @@ export const copy = {
       unavailable: "Some items in your cart are no longer available in the quantity you chose:",
       unavailableHint: "Please update your cart and try again.",
       generic: "Sorry, we couldn't place your order. Please try again.",
+      rateLimited: (minutes: number) =>
+        `Too many order attempts. Please wait about ${minutes} minute${minutes === 1 ? "" : "s"} and try again.`,
     },
     confirmation: {
       title: "Demo order placed",

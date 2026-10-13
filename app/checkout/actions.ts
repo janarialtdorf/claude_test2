@@ -3,15 +3,23 @@
 // Server Action: runs ONLY on the server when the checkout form is submitted.
 // The browser can call it, but can't see or change what happens inside.
 //
-// Steps: validate input → call the database function (which re-checks items,
-// prices and stock in one transaction) → refresh the catalogue cache →
-// return either errors or a confirmation summary.
+// Steps: validate input → check rate limits → call the database function
+// (which re-checks items, prices and stock in one transaction) → refresh the
+// catalogue cache → return either errors or a confirmation summary.
 
 import { updateTag } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { CUSTOMER_FIELDS, type CustomerField, parseCheckoutInput } from "@/lib/checkout";
 import { copy } from "@/lib/copy";
 import { CATALOGUE_CACHE_TAG } from "@/lib/products";
+import {
+  GLOBAL_RATE_LIMIT_KEY,
+  RATE_LIMITS,
+  getClientIp,
+  minutesToWait,
+  visitorRateLimitKey,
+} from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const errors = copy.checkout.errors;
@@ -63,6 +71,55 @@ const orderResultSchema = z.object({
   ),
 });
 
+const rateLimitResultSchema = z.object({
+  allowed: z.boolean(),
+  retry_after_seconds: z.number().int(),
+});
+
+type RateLimitCheck = { allowed: true } | { allowed: false; retryAfterSeconds: number };
+
+// Counts this attempt against the per-visitor limit first, then the
+// shop-wide one. Returns null if the check itself fails — the caller then
+// refuses the order rather than letting it through unchecked.
+async function checkRateLimits(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+): Promise<RateLimitCheck | null> {
+  const secret = process.env.RATE_LIMIT_SECRET;
+  if (!secret) {
+    console.error("RATE_LIMIT_SECRET is not set (see .env.example)");
+    return null;
+  }
+
+  const ip = getClientIp((await headers()).get("x-forwarded-for"));
+  const checks = [
+    { name: "per-visitor", key: visitorRateLimitKey(ip, secret), ...RATE_LIMITS.perVisitor },
+    { name: "global", key: GLOBAL_RATE_LIMIT_KEY, ...RATE_LIMITS.global },
+  ];
+
+  for (const check of checks) {
+    const { data, error } = await supabase.rpc("consume_rate_limit", {
+      p_key: check.key,
+      p_limit: check.limit,
+      p_window_seconds: check.windowSeconds,
+    });
+    if (error) {
+      console.error("consume_rate_limit failed:", error.code, error.message);
+      return null;
+    }
+    const result = rateLimitResultSchema.safeParse(data);
+    if (!result.success) {
+      console.error("consume_rate_limit returned an unexpected shape");
+      return null;
+    }
+    if (!result.data.allowed) {
+      // Log which limit was hit — but not the IP or its hash.
+      console.warn(`Checkout rate limit reached (${check.name})`);
+      return { allowed: false, retryAfterSeconds: result.data.retry_after_seconds };
+    }
+  }
+  return { allowed: true };
+}
+
 export async function placeDemoOrder(
   _previousState: CheckoutState,
   formData: FormData,
@@ -95,9 +152,17 @@ export async function placeDemoOrder(
     return errorState(errors.fixFields, { fieldErrors: parsed.fieldErrors });
   }
 
-  // 2. Create the order in the database (one transaction).
-  const { customer, items } = parsed;
   const supabase = createSupabaseAdminClient();
+
+  // 2. Rate limits — only valid attempts count, so fixing typos is free.
+  const rateLimit = await checkRateLimits(supabase);
+  if (!rateLimit) return errorState(errors.generic);
+  if (!rateLimit.allowed) {
+    return errorState(errors.rateLimited(minutesToWait(rateLimit.retryAfterSeconds)));
+  }
+
+  // 3. Create the order in the database (one transaction).
+  const { customer, items } = parsed;
   const { data, error } = await supabase.rpc("place_demo_order", {
     p_customer_name: customer.customerName,
     p_email: customer.email,
@@ -130,7 +195,7 @@ export async function placeDemoOrder(
     return errorState(errors.generic);
   }
 
-  // 3. Stock changed — make the next page load fetch fresh catalogue data.
+  // 4. Stock changed — make the next page load fetch fresh catalogue data.
   updateTag(CATALOGUE_CACHE_TAG);
 
   const order = result.data;
