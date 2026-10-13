@@ -236,7 +236,6 @@ export const copy = {
       cancel: "Cancel",
       deleted: "Image deleted.",
       limitReached: "This product already has the maximum of 8 images.",
-      imageOf: (n: number, alt: string) => `Image ${n}: ${alt}`,
       errors: {
         noFile: "Choose an image file.",
         tooLarge: "The file is larger than 5 MB.",

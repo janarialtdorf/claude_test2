@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ProductGrid } from "@/components/ProductGrid";
 import { copy } from "@/lib/copy";
 import { getCategories, getFeaturedProducts } from "@/lib/products";
+import { buttonPrimary } from "@/lib/styles";
 
 // Home page: brand intro, category links and featured products.
 export default async function HomePage() {
@@ -16,7 +17,7 @@ export default async function HomePage() {
         <p className="mt-4 max-w-xl text-stone-700 sm:text-lg">{copy.home.heroText}</p>
         <Link
           href="/products"
-          className="mt-8 inline-block rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+          className={`${buttonPrimary} mt-8 inline-block`}
         >
           {copy.home.heroCta}
         </Link>

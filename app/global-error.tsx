@@ -7,6 +7,7 @@
 
 import { useEffect } from "react";
 import { copy } from "@/lib/copy";
+import { buttonPrimary } from "@/lib/styles";
 import "./globals.css";
 
 export default function GlobalError({
@@ -31,7 +32,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={() => retry()}
-            className="mt-6 rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+            className={`${buttonPrimary} mt-6`}
           >
             {copy.error.retry}
           </button>

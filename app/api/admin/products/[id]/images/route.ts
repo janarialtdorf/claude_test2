@@ -5,8 +5,7 @@
 // not found · 409 already 8 images · 413 file too large · 500.
 
 import { randomUUID } from "node:crypto";
-import { revalidateTag } from "next/cache";
-import { UUID_PATTERN, guardAdminRequest, jsonError } from "@/lib/admin-api";
+import { guardAdminRequest, jsonError } from "@/lib/admin-api";
 import { copy } from "@/lib/copy";
 import {
   IMAGE_BUCKET,
@@ -16,7 +15,8 @@ import {
   detectImageType,
   productImageUrl,
 } from "@/lib/images";
-import { CATALOGUE_CACHE_TAG } from "@/lib/products";
+import { expireCatalogueCache } from "@/lib/products";
+import { isUuid } from "@/lib/validation";
 
 const errors = copy.admin.images.errors;
 
@@ -26,7 +26,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/admin/produ
   const { supabase } = guard;
 
   const { id: productId } = await ctx.params;
-  if (!UUID_PATTERN.test(productId)) return jsonError(404, "Product not found.");
+  if (!isUuid(productId)) return jsonError(404, "Product not found.");
 
   // Refuse obviously oversized requests before reading them.
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
@@ -113,7 +113,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/admin/produ
     return jsonError(500, "Could not upload the image.");
   }
 
-  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+  expireCatalogueCache();
   return Response.json(
     { id: image.id, url: productImageUrl(image.storage_path), altText: image.alt_text },
     { status: 201 },

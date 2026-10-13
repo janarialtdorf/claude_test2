@@ -9,13 +9,12 @@
 // Note: loading everything at once is fine for a few dozen products. A large
 // shop would query only what each page needs.
 
-import { cacheLife, cacheTag } from "next/cache";
-import { productImageUrl } from "@/lib/images";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { productImageUrl, sortImages } from "@/lib/images";
+import { sortBySize } from "@/lib/sizes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CartCatalogue } from "@/types/cart";
-import type { Category, Product, Size } from "@/types/product";
-
-const SIZE_ORDER: Size[] = ["XS", "S", "M", "L", "XL"];
+import type { Category, Product } from "@/types/product";
 
 interface Catalogue {
   categories: Category[];
@@ -25,6 +24,14 @@ interface Catalogue {
 // Name for this cached data, so a Server Action can refresh it on demand
 // (e.g. right after an order changes the stock).
 export const CATALOGUE_CACHE_TAG = "catalogue";
+
+// For admin endpoints (Route Handlers): expire the cached catalogue
+// immediately, so the shop shows a product change right away.
+// (The checkout Server Action uses updateTag(CATALOGUE_CACHE_TAG) instead,
+// which only works inside Server Actions.)
+export function expireCatalogueCache() {
+  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+}
 
 async function getCatalogue(): Promise<Catalogue> {
   "use cache";
@@ -75,22 +82,16 @@ async function getCatalogue(): Promise<Catalogue> {
     colorName: row.color_name,
     placeholderColor: row.placeholder_color,
     featured: row.featured,
-    variants: row.variants
-      // The database CHECK constraint only allows these sizes; this filter
-      // also tells TypeScript that `size` is one of them.
-      .filter((variant): variant is typeof variant & { size: Size } =>
-        SIZE_ORDER.includes(variant.size as Size),
-      )
-      .sort((a, b) => SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size))
-      .map((variant) => ({
+    variants: sortBySize(row.variants).map((variant) => ({
         id: variant.id,
         size: variant.size,
         // Only an explicit `true` counts as in stock (the type allows null).
         availability: variant.in_stock === true ? "in_stock" : "sold_out",
       })),
-    images: [...row.images]
-      .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
-      .map((image) => ({ url: productImageUrl(image.storage_path), alt: image.alt_text })),
+    images: sortImages(row.images).map((image) => ({
+      url: productImageUrl(image.storage_path),
+      alt: image.alt_text,
+    })),
   }));
 
   return { categories, products };
@@ -100,10 +101,6 @@ async function getCatalogue(): Promise<Catalogue> {
 
 export async function getCategories(): Promise<Category[]> {
   return (await getCatalogue()).categories;
-}
-
-export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
-  return (await getCategories()).find((category) => category.slug === slug);
 }
 
 export async function getAllProducts(): Promise<Product[]> {

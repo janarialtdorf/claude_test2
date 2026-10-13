@@ -7,10 +7,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MAX_STOCK, type ProductField, SIZES } from "@/lib/admin-product-schema";
+import { adminErrorMessage } from "@/lib/admin-errors";
+import { MAX_STOCK, type ProductField } from "@/lib/admin-product-schema";
 import { copy } from "@/lib/copy";
 import { centsToEuroInput, parseEuroToCents } from "@/lib/money";
-import type { Size } from "@/types/product";
+import { SIZES, type Size } from "@/lib/sizes";
+import { buttonPrimary, inputField } from "@/lib/styles";
+import { Alert } from "@/components/ui/Alert";
 
 const text = copy.admin.form;
 
@@ -96,14 +99,8 @@ export function ProductForm({
       } else if (response.status === 400) {
         setFieldErrors(body.fieldErrors ?? {});
         setMessage({ kind: "error", text: text.errors.fixFields });
-      } else if (response.status === 401) {
-        setMessage({ kind: "error", text: text.errors.sessionExpired });
-      } else if (response.status === 403) {
-        setMessage({ kind: "error", text: text.errors.forbidden });
-      } else if (response.status === 404) {
-        setMessage({ kind: "error", text: text.errors.notFound });
       } else {
-        setMessage({ kind: "error", text: text.errors.generic });
+        setMessage({ kind: "error", text: adminErrorMessage(response.status, body) });
       }
     } catch {
       setMessage({ kind: "error", text: text.errors.generic });
@@ -115,21 +112,14 @@ export function ProductForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="mt-6 max-w-2xl space-y-6">
       {message && (
-        <div
-          role={message.kind === "error" ? "alert" : "status"}
-          className={`rounded-md border px-4 py-3 text-sm ${
-            message.kind === "error"
-              ? "border-red-300 bg-red-50 text-red-800"
-              : "border-green-300 bg-green-50 text-green-900"
-          }`}
-        >
+        <Alert kind={message.kind}>
           {message.text}
           {message.kind === "error" && message.text === text.errors.sessionExpired && (
             <Link href="/login" className="ml-2 font-medium underline">
               {copy.auth.submit}
             </Link>
           )}
-        </div>
+        </Alert>
       )}
 
       <TextField name="name" label={text.name} defaultValue={initial?.name} error={fieldErrors.name} required />
@@ -143,7 +133,7 @@ export function ProductForm({
           defaultValue={initial?.description}
           aria-invalid={fieldErrors.description ? true : undefined}
           aria-describedby={fieldErrors.description ? "description-error" : undefined}
-          className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 focus-visible:outline-2 focus-visible:outline-stone-900"
+          className={inputField}
         />
         <FieldError id="description-error" error={fieldErrors.description} />
       </div>
@@ -240,7 +230,7 @@ export function ProductForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-wait disabled:bg-stone-500"
+          className={`${buttonPrimary}`}
         >
           {saving ? text.saving : isEdit ? text.save : text.create}
         </button>

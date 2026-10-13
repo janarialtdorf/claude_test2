@@ -1,7 +1,9 @@
 "use client"; // Error boundaries must be Client Components
 
 import { useEffect } from "react";
+import { MessagePage } from "@/components/ui/MessagePage";
 import { copy } from "@/lib/copy";
+import { buttonPrimary } from "@/lib/styles";
 
 // Shown if a page crashes while rendering. Users see a friendly message;
 // the technical details go to the browser console, not the page.
@@ -17,16 +19,10 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <div className="py-12 text-center">
-      <h1 className="text-2xl font-semibold">{copy.error.title}</h1>
-      <p className="mt-2 text-stone-600">{copy.error.text}</p>
-      <button
-        type="button"
-        onClick={() => retry()}
-        className="mt-6 rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
-      >
+    <MessagePage title={copy.error.title} text={copy.error.text}>
+      <button type="button" onClick={() => retry()} className={buttonPrimary}>
         {copy.error.retry}
       </button>
-    </div>
+    </MessagePage>
   );
 }

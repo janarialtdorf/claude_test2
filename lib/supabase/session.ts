@@ -8,19 +8,15 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSupabaseConfig } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
 export async function createSupabaseSessionClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) {
-    throw new Error("Missing Supabase settings. See .env.example.");
-  }
-
+  const { url, publishableKey } = getSupabaseConfig();
   const cookieStore = await cookies();
 
   // A new client per request — never share one between users.
-  return createServerClient<Database>(url, key, {
+  return createServerClient<Database>(url, publishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

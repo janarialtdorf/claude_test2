@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { ProductImage } from "@/components/ProductImage";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { MAX_QUANTITY_PER_ITEM } from "@/lib/cart";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
+import { buttonPrimary } from "@/lib/styles";
 
 const QUANTITY_OPTIONS = Array.from({ length: MAX_QUANTITY_PER_ITEM }, (_, i) => i + 1);
 
@@ -39,15 +41,7 @@ export function CartView() {
       )}
 
       {cart.lines.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-stone-300 px-6 py-12 text-center">
-          <p className="text-stone-700">{copy.cart.empty}</p>
-          <Link
-            href="/products"
-            className="mt-6 inline-block rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
-          >
-            {copy.cart.browseProducts}
-          </Link>
-        </div>
+        <EmptyState message={copy.cart.empty} actionHref="/products" actionLabel={copy.cart.browseProducts} />
       ) : (
         <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
           <ul className="divide-y divide-stone-200 border-y border-stone-200">
@@ -136,7 +130,7 @@ export function CartView() {
             <p className="mt-4 text-sm text-stone-600">{copy.cart.notAnOrder}</p>
             <Link
               href="/checkout"
-              className="mt-6 block w-full rounded-md bg-stone-900 px-5 py-3 text-center font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+              className={`${buttonPrimary} mt-6 block w-full text-center`}
             >
               {copy.cart.goToCheckout}
             </Link>

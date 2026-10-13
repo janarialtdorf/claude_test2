@@ -4,6 +4,8 @@ import { getAdminProducts } from "@/lib/admin-products";
 import { requireAdminPage } from "@/lib/auth";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
+import { buttonPrimarySmall } from "@/lib/styles";
+import { Alert } from "@/components/ui/Alert";
 
 // Rendered per request for the logged-in admin (see app/admin/layout.tsx).
 export const instant = false;
@@ -25,16 +27,16 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
         <h1 className="text-3xl font-semibold tracking-tight">{text.productsTitle}</h1>
         <Link
           href="/admin/products/new"
-          className="rounded-md bg-stone-900 px-4 py-2 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+          className={`${buttonPrimarySmall}`}
         >
           {text.newProduct}
         </Link>
       </div>
 
       {notice && (
-        <p role="status" className="mt-4 rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900">
+        <Alert kind="success" className="mt-4">
           {notice}
-        </p>
+        </Alert>
       )}
 
       {products.length === 0 ? (

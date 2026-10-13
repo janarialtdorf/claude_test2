@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ProductGrid, ProductGridSkeleton } from "@/components/ProductGrid";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { copy } from "@/lib/copy";
 import { getAllProducts, getCategories, getProductsByCategory } from "@/lib/products";
 import type { Category } from "@/types/product";
@@ -52,10 +53,13 @@ async function FilteredProducts({
     <>
       <CategoryNav categories={categories} activeSlug={activeCategory?.slug} />
 
-      {isUnknownCategory ? (
-        <EmptyState message={copy.listing.unknownCategory} />
-      ) : products.length === 0 ? (
-        <EmptyState message={copy.listing.empty} />
+      {isUnknownCategory || products.length === 0 ? (
+        <EmptyState
+          message={isUnknownCategory ? copy.listing.unknownCategory : copy.listing.empty}
+          actionHref="/products"
+          actionLabel={copy.listing.showAll}
+          actionStyle="link"
+        />
       ) : (
         <>
           <p className="mb-4 text-sm text-stone-600">
@@ -105,19 +109,5 @@ function CategoryNav({
         ))}
       </ul>
     </nav>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-stone-300 px-6 py-12 text-center">
-      <p className="text-stone-700">{message}</p>
-      <Link
-        href="/products"
-        className="mt-4 inline-block font-medium underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
-      >
-        {copy.listing.showAll}
-      </Link>
-    </div>
   );
 }

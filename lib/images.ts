@@ -6,8 +6,10 @@ import { copy } from "@/lib/copy";
 export const IMAGE_BUCKET = "product-images";
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB (the bucket enforces this too)
 export const MAX_IMAGES_PER_PRODUCT = 8; // the database enforces this too
+// Same list as the bucket's allowed types and detectImageType() below.
+export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
-export type ImageType = { mime: "image/jpeg" | "image/png" | "image/webp"; extension: "jpg" | "png" | "webp" };
+export type ImageType = { mime: (typeof ACCEPTED_IMAGE_TYPES)[number]; extension: "jpg" | "png" | "webp" };
 
 // Works out the real file type from the first bytes of the file ("magic
 // numbers"), instead of trusting the file name or what the browser claims.
@@ -23,6 +25,12 @@ export function detectImageType(bytes: Uint8Array): ImageType | null {
     return { mime: "image/webp", extension: "webp" };
   }
   return null;
+}
+
+// Gallery order: lowest sort_order first; ties broken by upload time.
+// The first image is the main image.
+export function sortImages<T extends { sort_order: number; created_at: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at));
 }
 
 // Public URL of an image file. The bucket is public, so anyone can view it.

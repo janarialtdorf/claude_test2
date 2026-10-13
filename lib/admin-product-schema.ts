@@ -3,10 +3,11 @@
 
 import { z } from "zod";
 import { copy } from "@/lib/copy";
+import { SIZES } from "@/lib/sizes";
+import { firstFieldErrors } from "@/lib/validation";
 
 const messages = copy.admin.form.errors;
 
-export const SIZES = ["XS", "S", "M", "L", "XL"] as const;
 export const MAX_PRICE_CENTS = 1_000_000; // €10,000
 export const MAX_STOCK = 100_000;
 
@@ -51,10 +52,5 @@ export function toDatabaseProduct(input: ProductInput) {
 
 // First error message per field, for showing next to form fields.
 export function productFieldErrors(error: z.ZodError): Partial<Record<ProductField, string>> {
-  const flattened = z.flattenError(error).fieldErrors as Record<string, string[] | undefined>;
-  const result: Partial<Record<ProductField, string>> = {};
-  for (const [field, list] of Object.entries(flattened)) {
-    if (list?.[0]) result[field as ProductField] = list[0];
-  }
-  return result;
+  return firstFieldErrors<ProductField>(error);
 }

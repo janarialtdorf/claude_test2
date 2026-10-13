@@ -1,18 +1,15 @@
 import Link from "next/link";
+import { MessagePage } from "@/components/ui/MessagePage";
 import { copy } from "@/lib/copy";
+import { buttonPrimary } from "@/lib/styles";
 
 // Shown for any URL that doesn't match a page, e.g. /something-random.
 export default function NotFound() {
   return (
-    <div className="py-12 text-center">
-      <h1 className="text-2xl font-semibold">{copy.notFound.pageTitle}</h1>
-      <p className="mt-2 text-stone-600">{copy.notFound.pageText}</p>
-      <Link
-        href="/products"
-        className="mt-6 inline-block rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
-      >
+    <MessagePage title={copy.notFound.pageTitle} text={copy.notFound.pageText}>
+      <Link href="/products" className={`${buttonPrimary} inline-block`}>
         {copy.notFound.browseProducts}
       </Link>
-    </div>
+    </MessagePage>
   );
 }

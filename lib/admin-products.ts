@@ -3,8 +3,8 @@
 // they're not cached, so admins always see the current state.
 
 import "server-only";
-import { SIZES } from "@/lib/admin-product-schema";
-import { productImageUrl } from "@/lib/images";
+import { productImageUrl, sortImages } from "@/lib/images";
+import { sortBySize } from "@/lib/sizes";
 import { createSupabaseSessionClient } from "@/lib/supabase/session";
 import type { Size } from "@/types/product";
 
@@ -69,13 +69,12 @@ function toAdminProduct(row: ProductRow): AdminProduct {
     placeholderColor: row.placeholder_color,
     featured: row.featured,
     isPublished: row.is_published,
-    sizes: row.variants
-      .filter((v): v is { size: Size; stock_quantity: number } => SIZES.includes(v.size as Size))
-      .sort((a, b) => SIZES.indexOf(a.size) - SIZES.indexOf(b.size))
-      .map((v) => ({ size: v.size, stockQuantity: v.stock_quantity })),
-    images: [...row.images]
-      .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
-      .map((image) => ({ id: image.id, url: productImageUrl(image.storage_path), altText: image.alt_text })),
+    sizes: sortBySize(row.variants).map((v) => ({ size: v.size, stockQuantity: v.stock_quantity })),
+    images: sortImages(row.images).map((image) => ({
+      id: image.id,
+      url: productImageUrl(image.storage_path),
+      altText: image.alt_text,
+    })),
   };
 }
 

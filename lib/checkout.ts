@@ -10,6 +10,7 @@
 import { z } from "zod";
 import { MAX_QUANTITY_PER_ITEM } from "@/lib/cart";
 import { copy } from "@/lib/copy";
+import { firstFieldErrors } from "@/lib/validation";
 
 const messages = copy.checkout.errors;
 
@@ -85,13 +86,6 @@ export function parseCheckoutInput(
   }
 
   // Keep only the first error message per field, for display next to it.
-  const fieldErrors: Partial<Record<CustomerField, string>> = {};
-  if (!customerResult.success) {
-    const flattened = z.flattenError(customerResult.error).fieldErrors;
-    for (const field of CUSTOMER_FIELDS) {
-      const first = flattened[field]?.[0];
-      if (first) fieldErrors[field] = first;
-    }
-  }
+  const fieldErrors = customerResult.success ? {} : firstFieldErrors<CustomerField>(customerResult.error);
   return { success: false, fieldErrors, itemsInvalid: !itemsResult.success };
 }

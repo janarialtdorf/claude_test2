@@ -3,10 +3,10 @@
 // DELETE /api/admin/products/[id]/images/[imageId] — delete the image + file.
 // Admins only. Responses: 200 / 204 · 400 · 401 · 403 · 404 · 500.
 
-import { revalidateTag } from "next/cache";
-import { UUID_PATTERN, guardAdminRequest, jsonError, readJson } from "@/lib/admin-api";
+import { guardAdminRequest, jsonError, readJson } from "@/lib/admin-api";
 import { IMAGE_BUCKET, imageUpdateSchema } from "@/lib/images";
-import { CATALOGUE_CACHE_TAG } from "@/lib/products";
+import { expireCatalogueCache } from "@/lib/products";
+import { isUuid } from "@/lib/validation";
 
 type Context = RouteContext<"/api/admin/products/[id]/images/[imageId]">;
 
@@ -16,7 +16,7 @@ export async function PATCH(request: Request, ctx: Context) {
   const { supabase } = guard;
 
   const { id: productId, imageId } = await ctx.params;
-  if (!UUID_PATTERN.test(productId) || !UUID_PATTERN.test(imageId)) return jsonError(404, "Image not found.");
+  if (!isUuid(productId) || !isUuid(imageId)) return jsonError(404, "Image not found.");
 
   const parsed = imageUpdateSchema.safeParse(await readJson(request));
   if (!parsed.success) {
@@ -55,7 +55,7 @@ export async function PATCH(request: Request, ctx: Context) {
   }
   if (data.length === 0) return jsonError(404, "Image not found.");
 
-  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+  expireCatalogueCache();
   return Response.json({ id: imageId }, { status: 200 });
 }
 
@@ -65,7 +65,7 @@ export async function DELETE(request: Request, ctx: Context) {
   const { supabase } = guard;
 
   const { id: productId, imageId } = await ctx.params;
-  if (!UUID_PATTERN.test(productId) || !UUID_PATTERN.test(imageId)) return jsonError(404, "Image not found.");
+  if (!isUuid(productId) || !isUuid(imageId)) return jsonError(404, "Image not found.");
 
   const { data, error } = await supabase
     .from("product_images")
@@ -83,6 +83,6 @@ export async function DELETE(request: Request, ctx: Context) {
   const { error: storageError } = await supabase.storage.from(IMAGE_BUCKET).remove([data[0].storage_path]);
   if (storageError) console.error("Removing image file failed (orphan file):", storageError.message);
 
-  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+  expireCatalogueCache();
   return new Response(null, { status: 204 });
 }

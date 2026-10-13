@@ -3,10 +3,9 @@
 // Responses: 201 {id, slug} · 400 invalid input · 401 not logged in ·
 // 403 not an admin / cross-site · 500 unexpected error.
 
-import { revalidateTag } from "next/cache";
 import { guardAdminRequest, jsonError, readJson } from "@/lib/admin-api";
 import { productFieldErrors, productInputSchema, toDatabaseProduct } from "@/lib/admin-product-schema";
-import { CATALOGUE_CACHE_TAG } from "@/lib/products";
+import { expireCatalogueCache } from "@/lib/products";
 import { slugify } from "@/lib/slug";
 
 export async function POST(request: Request) {
@@ -34,6 +33,6 @@ export async function POST(request: Request) {
   }
 
   // Make the storefront show the change right away.
-  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+  expireCatalogueCache();
   return Response.json(data, { status: 201 });
 }

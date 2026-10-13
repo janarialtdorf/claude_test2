@@ -6,6 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { adminErrorMessage } from "@/lib/admin-errors";
 import { copy } from "@/lib/copy";
 
 const text = copy.admin.delete;
@@ -27,16 +28,7 @@ export function DeleteProductButton({ productId }: { productId: string }) {
         router.refresh();
         return;
       }
-      const errors = copy.admin.form.errors;
-      setError(
-        response.status === 401
-          ? errors.sessionExpired
-          : response.status === 403
-            ? errors.forbidden
-            : response.status === 404
-              ? errors.notFound
-              : errors.generic,
-      );
+      setError(adminErrorMessage(response.status));
     } catch {
       setError(copy.admin.form.errors.generic);
     }

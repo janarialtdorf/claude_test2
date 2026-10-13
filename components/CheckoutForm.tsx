@@ -12,9 +12,12 @@ import Link from "next/link";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { type CheckoutState, placeDemoOrder } from "@/app/checkout/actions";
 import { useCart } from "@/components/CartProvider";
+import { Alert } from "@/components/ui/Alert";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { DELIVERY_COUNTRIES, type CustomerField } from "@/lib/checkout";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
+import { buttonPrimary } from "@/lib/styles";
 
 const text = copy.checkout;
 const initialState: CheckoutState = { status: "idle" };
@@ -66,14 +69,8 @@ export function CheckoutForm() {
       <div className="mt-8">
         {/* Still explain a failed order if it just emptied the cart. */}
         {errorAlert}
-        <div className="mt-4 rounded-lg border border-dashed border-stone-300 px-6 py-12 text-center">
-          <p className="text-stone-700">{text.emptyCart}</p>
-          <Link
-            href="/products"
-            className="mt-6 inline-block rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
-          >
-            {copy.cart.browseProducts}
-          </Link>
+        <div className="mt-4">
+          <EmptyState message={text.emptyCart} actionHref="/products" actionLabel={copy.cart.browseProducts} />
         </div>
       </div>
     );
@@ -153,7 +150,7 @@ export function CheckoutForm() {
         <button
           type="submit"
           disabled={pending}
-          className="mt-8 w-full rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-wait disabled:bg-stone-500 sm:w-auto"
+          className={`${buttonPrimary} mt-8 w-full sm:w-auto`}
         >
           {pending ? text.submitting : text.submit}
         </button>
@@ -208,11 +205,7 @@ function ErrorAlert({
   unavailableNames: string[];
 }) {
   return (
-    <div
-      id="checkout-form-error"
-      role="alert"
-      className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
-    >
+    <Alert kind="error" id="checkout-form-error" className="mt-4">
       <p>{state.formError}</p>
       {state.unavailableVariantIds.length > 0 && (
         <>
@@ -231,7 +224,7 @@ function ErrorAlert({
           </p>
         </>
       )}
-    </div>
+    </Alert>
   );
 }
 
@@ -339,7 +332,7 @@ function Confirmation({
 
       <Link
         href="/products"
-        className="mt-8 inline-block rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+        className={`${buttonPrimary} mt-8 inline-block`}
       >
         {text.confirmation.continueShopping}
       </Link>

@@ -10,6 +10,7 @@ import { useCart } from "@/components/CartProvider";
 import { MAX_QUANTITY_PER_ITEM } from "@/lib/cart";
 import { copy } from "@/lib/copy";
 import type { Size } from "@/types/product";
+import { buttonPrimary } from "@/lib/styles";
 
 export interface SizeOption {
   variantId: string;
@@ -89,7 +90,7 @@ export function AddToCart({ productName, sizes }: { productName: string; sizes: 
       {anyAvailable ? (
         <button
           type="submit"
-          className="mt-6 w-full rounded-md bg-stone-900 px-5 py-3 font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 sm:w-auto"
+          className={`${buttonPrimary} mt-6 w-full sm:w-auto`}
         >
           {copy.addToCart.button}
         </button>

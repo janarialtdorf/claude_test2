@@ -4,18 +4,18 @@
 //
 // Responses: 200 {id, slug} / 204 · 400 · 401 · 403 · 404 · 500.
 
-import { revalidateTag } from "next/cache";
-import { UUID_PATTERN, guardAdminRequest, jsonError, readJson } from "@/lib/admin-api";
+import { guardAdminRequest, jsonError, readJson } from "@/lib/admin-api";
 import { productFieldErrors, productInputSchema, toDatabaseProduct } from "@/lib/admin-product-schema";
 import { IMAGE_BUCKET } from "@/lib/images";
-import { CATALOGUE_CACHE_TAG } from "@/lib/products";
+import { expireCatalogueCache } from "@/lib/products";
+import { isUuid } from "@/lib/validation";
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/products/[id]">) {
   const guard = await guardAdminRequest(request);
   if (!guard.ok) return guard.response;
 
   const { id } = await ctx.params;
-  if (!UUID_PATTERN.test(id)) return jsonError(404, "Product not found.");
+  if (!isUuid(id)) return jsonError(404, "Product not found.");
 
   const parsed = productInputSchema.safeParse(await readJson(request));
   if (!parsed.success) {
@@ -37,7 +37,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/prod
     return jsonError(500, "Could not save the product.");
   }
 
-  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+  expireCatalogueCache();
   return Response.json(data, { status: 200 });
 }
 
@@ -46,7 +46,7 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/pro
   if (!guard.ok) return guard.response;
 
   const { id } = await ctx.params;
-  if (!UUID_PATTERN.test(id)) return jsonError(404, "Product not found.");
+  if (!isUuid(id)) return jsonError(404, "Product not found.");
 
   // Remember the image files first: the rows disappear with the product.
   const { data: images, error: imagesError } = await guard.supabase
@@ -75,6 +75,6 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/pro
     if (storageError) console.error("Removing product image files failed (orphan files):", storageError.message);
   }
 
-  revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
+  expireCatalogueCache();
   return new Response(null, { status: 204 });
 }

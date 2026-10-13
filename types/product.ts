@@ -2,7 +2,9 @@
 // lib/products.ts converts database rows (snake_case, see types/database.ts)
 // into these simpler shapes, so the UI doesn't depend on table details.
 
-export type Size = "XS" | "S" | "M" | "L" | "XL";
+import type { Size } from "@/lib/sizes";
+
+export type { Size };
 
 // The storefront only knows whether a size is in stock, never the exact
 // number: the database keeps stock_quantity hidden from the public.
