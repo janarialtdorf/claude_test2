@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ProductPlaceholder } from "@/components/ProductPlaceholder";
+import { ProductImage } from "@/components/ProductImage";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
 import { isProductAvailable } from "@/lib/products";
@@ -16,7 +16,14 @@ export function ProductCard({ product }: { product: Product }) {
     >
       <div className="overflow-hidden rounded-md">
         <div className="transition-transform duration-300 group-hover:scale-[1.02]">
-          <ProductPlaceholder name={product.name} color={product.placeholderColor} decorative />
+          {/* alt="": the product name is already the link text below */}
+          <ProductImage
+            src={product.images[0]?.url}
+            alt=""
+            name={product.name}
+            placeholderColor={product.placeholderColor}
+            sizes="(min-width: 1024px) 270px, 50vw"
+          />
         </div>
       </div>
       <div className="mt-3 space-y-1">

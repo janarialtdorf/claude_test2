@@ -10,6 +10,7 @@
 // shop would query only what each page needs.
 
 import { cacheLife, cacheTag } from "next/cache";
+import { productImageUrl } from "@/lib/images";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CartCatalogue } from "@/types/cart";
 import type { Category, Product, Size } from "@/types/product";
@@ -42,7 +43,8 @@ async function getCatalogue(): Promise<Catalogue> {
         `id, slug, name, description, price_cents, currency, color_name,
          placeholder_color, featured,
          category:categories!inner ( slug, name ),
-         variants:product_variants ( id, size, in_stock )`,
+         variants:product_variants ( id, size, in_stock ),
+         images:product_images ( storage_path, alt_text, sort_order, created_at )`,
       )
       .eq("is_published", true)
       .order("sort_order"),
@@ -86,6 +88,9 @@ async function getCatalogue(): Promise<Catalogue> {
         // Only an explicit `true` counts as in stock (the type allows null).
         availability: variant.in_stock === true ? "in_stock" : "sold_out",
       })),
+    images: [...row.images]
+      .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
+      .map((image) => ({ url: productImageUrl(image.storage_path), alt: image.alt_text })),
   }));
 
   return { categories, products };
@@ -138,6 +143,7 @@ export async function getCartCatalogue(): Promise<CartCatalogue> {
         currency: product.currency,
         available: variant.availability === "in_stock",
         placeholderColor: product.placeholderColor,
+        imageUrl: product.images[0]?.url ?? null,
       };
     }
   }

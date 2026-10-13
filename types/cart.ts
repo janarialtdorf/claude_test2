@@ -19,6 +19,8 @@ export interface CartVariantInfo {
   currency: string;
   available: boolean;
   placeholderColor: string;
+  // Main product image, or null to show the placeholder.
+  imageUrl: string | null;
 }
 
 // variantId → info, for quick lookups.

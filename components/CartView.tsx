@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
-import { ProductPlaceholder } from "@/components/ProductPlaceholder";
+import { ProductImage } from "@/components/ProductImage";
 import { MAX_QUANTITY_PER_ITEM } from "@/lib/cart";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
@@ -62,7 +62,14 @@ export function CartView() {
                     tabIndex={-1}
                     aria-hidden="true"
                   >
-                    <ProductPlaceholder name={variant.productName} color={variant.placeholderColor} decorative showLabel={false} />
+                    <ProductImage
+                      src={variant.imageUrl}
+                      alt=""
+                      name={variant.productName}
+                      placeholderColor={variant.placeholderColor}
+                      sizes="96px"
+                      showPlaceholderLabel={false}
+                    />
                   </Link>
 
                   <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:justify-between">

@@ -22,6 +22,7 @@ function variant(overrides: Partial<CartVariantInfo> & { variantId: string }): C
     currency: "EUR",
     available: true,
     placeholderColor: "#ccc",
+    imageUrl: null,
     ...overrides,
   };
 }

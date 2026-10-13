@@ -206,8 +206,9 @@ supabase/seed.sql         DEMO products, categories and sizes
   caches the result for about a minute (`"use cache"` + `cacheLife("minutes")`).
 - **Database rules protect the data, not the key.** The publishable key is
   public by design; Row Level Security and column grants decide what it can do.
-- **Placeholder images**: there are no licensed product photos yet, so each
-  product shows a coloured block labelled "Demo product".
+- **Product images** come from Supabase Storage and are shown with
+  Next.js `<Image>` (resized and optimised automatically). Products without
+  images show a coloured placeholder labelled "Demo product".
 - **Server Components by default.** Only interactive parts (mobile menu, cart)
   are client components.
 - **The cart stores only `{ variantId, quantity }` in localStorage — never
@@ -252,11 +253,11 @@ Done (rate limiting):
 Done (admin):
 
 - Admin login with roles; product list, create, edit and delete for admins.
-- Product image galleries: upload, alt text, main image, delete (admin).
+- Product image galleries: upload, alt text, main image, delete (admin);
+  main images on product cards and in the cart, gallery on product pages.
 
 Not built yet / known gaps:
 
-- Showing product images in the shop (next stage)
 
 - Real payments, order emails, accounts, order history
 - CAPTCHA / bot protection (planned option: Cloudflare Turnstile)

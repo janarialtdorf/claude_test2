@@ -34,8 +34,16 @@ export interface Product {
   categorySlug: string;
   categoryName: string;
   colorName: string;
-  // Background colour for the placeholder image (we have no real photos yet).
+  // Background colour for the placeholder, shown when there are no images.
   placeholderColor: string;
   featured: boolean;
   variants: ProductVariant[];
+  // Ordered gallery; the first image is the main image. Empty = show the
+  // coloured placeholder instead.
+  images: ProductImage[];
+}
+
+export interface ProductImage {
+  url: string;
+  alt: string;
 }

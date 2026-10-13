@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/AddToCart";
-import { ProductPlaceholder } from "@/components/ProductPlaceholder";
+import { ProductGallery } from "@/components/ProductGallery";
 import { copy } from "@/lib/copy";
 import { formatPrice } from "@/lib/format";
 import { getAllProducts, getProductBySlug, isProductAvailable } from "@/lib/products";
@@ -53,9 +53,7 @@ function ProductDetails({ product }: { product: Product }) {
 
   return (
     <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-12">
-      <div className="overflow-hidden rounded-lg">
-        <ProductPlaceholder name={product.name} color={product.placeholderColor} />
-      </div>
+      <ProductGallery images={product.images} name={product.name} placeholderColor={product.placeholderColor} />
 
       <div>
         <Link

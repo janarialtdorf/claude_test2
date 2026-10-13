@@ -41,6 +41,8 @@ export const copy = {
     color: "Colour",
     placeholderImage: (name: string) => `Placeholder image for ${name}`,
     demoLabel: "Demo product",
+    galleryLabel: "Product images",
+    showImage: (n: number, alt: string) => `Show image ${n}: ${alt}`,
   },
   addToCart: {
     sizeLegend: "Size",
