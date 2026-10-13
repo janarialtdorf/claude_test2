@@ -4,6 +4,7 @@
 
 import "server-only";
 import { SIZES } from "@/lib/admin-product-schema";
+import { productImageUrl } from "@/lib/images";
 import { createSupabaseSessionClient } from "@/lib/supabase/session";
 import type { Size } from "@/types/product";
 
@@ -21,12 +22,21 @@ export interface AdminProduct {
   featured: boolean;
   isPublished: boolean;
   sizes: { size: Size; stockQuantity: number }[];
+  // Ordered: the first one is the main image.
+  images: AdminProductImage[];
+}
+
+export interface AdminProductImage {
+  id: string;
+  url: string;
+  altText: string;
 }
 
 const PRODUCT_COLUMNS = `id, slug, name, description, price_cents, currency, category_id,
   color_name, placeholder_color, featured, is_published,
   category:categories!inner ( name ),
-  variants:product_variants ( size, stock_quantity )`;
+  variants:product_variants ( size, stock_quantity ),
+  images:product_images ( id, storage_path, alt_text, sort_order, created_at )`;
 
 type ProductRow = {
   id: string;
@@ -42,6 +52,7 @@ type ProductRow = {
   is_published: boolean;
   category: { name: string };
   variants: { size: string; stock_quantity: number }[];
+  images: { id: string; storage_path: string; alt_text: string; sort_order: number; created_at: string }[];
 };
 
 function toAdminProduct(row: ProductRow): AdminProduct {
@@ -62,6 +73,9 @@ function toAdminProduct(row: ProductRow): AdminProduct {
       .filter((v): v is { size: Size; stock_quantity: number } => SIZES.includes(v.size as Size))
       .sort((a, b) => SIZES.indexOf(a.size) - SIZES.indexOf(b.size))
       .map((v) => ({ size: v.size, stockQuantity: v.stock_quantity })),
+    images: [...row.images]
+      .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
+      .map((image) => ({ id: image.id, url: productImageUrl(image.storage_path), altText: image.alt_text })),
   };
 }
 

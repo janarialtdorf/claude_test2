@@ -7,6 +7,7 @@
 import { revalidateTag } from "next/cache";
 import { UUID_PATTERN, guardAdminRequest, jsonError, readJson } from "@/lib/admin-api";
 import { productFieldErrors, productInputSchema, toDatabaseProduct } from "@/lib/admin-product-schema";
+import { IMAGE_BUCKET } from "@/lib/images";
 import { CATALOGUE_CACHE_TAG } from "@/lib/products";
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/products/[id]">) {
@@ -47,8 +48,18 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/pro
   const { id } = await ctx.params;
   if (!UUID_PATTERN.test(id)) return jsonError(404, "Product not found.");
 
-  // RLS only lets admins delete. Sizes are deleted with the product
-  // (on delete cascade); order lines keep their snapshots.
+  // Remember the image files first: the rows disappear with the product.
+  const { data: images, error: imagesError } = await guard.supabase
+    .from("product_images")
+    .select("storage_path")
+    .eq("product_id", id);
+  if (imagesError) {
+    console.error("Product delete: listing images failed:", imagesError.code, imagesError.message);
+    return jsonError(500, "Could not delete the product.");
+  }
+
+  // RLS only lets admins delete. Sizes and image rows are deleted with the
+  // product (on delete cascade); order lines keep their snapshots.
   const { data, error } = await guard.supabase.from("products").delete().eq("id", id).select("id");
 
   if (error) {
@@ -56,6 +67,13 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/pro
     return jsonError(500, "Could not delete the product.");
   }
   if (data.length === 0) return jsonError(404, "Product not found.");
+
+  if (images.length > 0) {
+    const { error: storageError } = await guard.supabase.storage
+      .from(IMAGE_BUCKET)
+      .remove(images.map((image) => image.storage_path));
+    if (storageError) console.error("Removing product image files failed (orphan files):", storageError.message);
+  }
 
   revalidateTag(CATALOGUE_CACHE_TAG, { expire: 0 });
   return new Response(null, { status: 204 });

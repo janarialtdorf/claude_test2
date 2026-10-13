@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
+import { ImageGalleryManager } from "@/components/admin/ImageGalleryManager";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { UUID_PATTERN } from "@/lib/admin-api";
 import { getAdminCategories, getAdminProduct } from "@/lib/admin-products";
@@ -29,17 +30,22 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       <h1 className="mt-4 text-3xl font-semibold tracking-tight">{product.name}</h1>
       {query.created === "1" && (
         <p role="status" className="mt-4 max-w-2xl rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900">
-          {copy.admin.created}
+          {copy.admin.created}{" "}
+          <a href="#images-heading" className="font-medium underline">
+            {copy.admin.addImagesLink}
+          </a>
         </p>
       )}
-      {/* key: re-create the form after a save so it shows the saved values */}
+      {/* key: re-create the form after a save so it shows the saved values
+          (images are left out, so uploading one doesn't reset unsaved edits) */}
       <ProductForm
-        key={JSON.stringify(product)}
+        key={JSON.stringify({ ...product, images: undefined })}
         categories={categories}
         initial={product}
         productId={product.id}
         productSlug={product.slug}
       />
+      <ImageGalleryManager productId={product.id} images={product.images} />
       <DeleteProductButton productId={product.id} />
     </div>
   );

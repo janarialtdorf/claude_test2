@@ -93,7 +93,16 @@ hidden ones and stock per size). The pages use these endpoints:
 |---|---|---|
 | `POST` | `/api/admin/products` | create a product with sizes |
 | `PATCH` | `/api/admin/products/[id]` | edit a product and its sizes |
-| `DELETE` | `/api/admin/products/[id]` | delete a product |
+| `DELETE` | `/api/admin/products/[id]` | delete a product (and its image files) |
+| `POST` | `/api/admin/products/[id]/images` | upload an image (form data: `file`, `altText`) |
+| `PATCH` | `/api/admin/products/[id]/images/[imageId]` | change alt text / make main image |
+| `DELETE` | `/api/admin/products/[id]/images/[imageId]` | delete an image and its file |
+
+**Images** are stored in the Supabase Storage bucket `product-images`
+(public to view, admins only to upload/delete). Each product can have up to
+8 images; the first is the main image. Uploads must be JPEG, PNG or WebP
+(checked from the file's content, not its name) and at most 5 MB; files get
+random names. Alt text is required for accessibility.
 
 **Security:** every endpoint checks the request comes from this site
 (`Origin` header, against cross-site request forgery), that the user is
@@ -243,10 +252,11 @@ Done (rate limiting):
 Done (admin):
 
 - Admin login with roles; product list, create, edit and delete for admins.
+- Product image galleries: upload, alt text, main image, delete (admin).
 
 Not built yet / known gaps:
 
-- Product image galleries (next stage)
+- Showing product images in the shop (next stage)
 
 - Real payments, order emails, accounts, order history
 - CAPTCHA / bot protection (planned option: Cloudflare Turnstile)
