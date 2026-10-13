@@ -249,6 +249,24 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: []
+      }
       rate_limit_counters: {
         Row: {
           count: number
@@ -276,6 +294,7 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: Json
       }
+      is_admin: { Args: never; Returns: boolean }
       place_demo_order: {
         Args: {
           p_address_line1: string

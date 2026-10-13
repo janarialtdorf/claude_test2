@@ -139,6 +139,28 @@ export const copy = {
     text: "Sorry, this page couldn't be loaded. Please try again.",
     retry: "Try again",
   },
+  auth: {
+    loginTitle: "Admin login",
+    loginIntro: "For shop staff only. Shoppers don't need an account.",
+    email: "Email",
+    password: "Password",
+    submit: "Log in",
+    submitting: "Logging in…",
+    logout: "Log out",
+    errors: {
+      invalidInput: "Enter your email and password.",
+      invalidCredentials: "Email or password is incorrect.",
+      tooManyAttempts: "Too many login attempts. Please wait a few minutes and try again.",
+      notAdmin: "This account doesn't have admin access.",
+      generic: "Sorry, logging in failed. Please try again.",
+    },
+  },
+  admin: {
+    title: "Admin",
+    signedInAs: (email: string) => `Signed in as ${email}`,
+    backToShop: "View shop",
+    welcome: "You're logged in as an admin.",
+  },
   footer: {
     note: "Threadline is a demo learning project. Prices and products are not real.",
   },
