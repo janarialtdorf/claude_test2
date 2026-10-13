@@ -290,6 +290,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_product: {
+        Args: { p_base_slug: string; p_product: Json }
+        Returns: Json
+      }
+      admin_update_product: {
+        Args: { p_id: string; p_product: Json }
+        Returns: Json
+      }
       consume_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: Json

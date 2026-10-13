@@ -73,6 +73,36 @@ only the server (secret key) may call. In one transaction it checks the items
 and stock, takes prices from the `products` table, saves the order with
 price/name snapshots, and reduces stock. If anything fails, nothing is saved.
 
+## Admin area
+
+Staff log in at `/login` (Supabase Auth, email + password). Public sign-up is
+turned off in the Supabase dashboard; there are no customer accounts.
+
+**Creating an admin:** in the Supabase dashboard go to Authentication →
+Users → Add user (tick "Auto Confirm User"), then give the account the admin
+role with SQL (run in the project folder):
+
+```bash
+npx supabase db query --linked "update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'person@example.com');"
+```
+
+At `/admin`, admins can list, create, edit and delete products (including
+hidden ones and stock per size). The pages use these endpoints:
+
+| Method | Path | Does |
+|---|---|---|
+| `POST` | `/api/admin/products` | create a product with sizes |
+| `PATCH` | `/api/admin/products/[id]` | edit a product and its sizes |
+| `DELETE` | `/api/admin/products/[id]` | delete a product |
+
+**Security:** every endpoint checks the request comes from this site
+(`Origin` header, against cross-site request forgery), that the user is
+logged in (`401`) and is an admin (`403`), and validates input with Zod
+(`400`). The database checks again: Row Level Security only lets admins
+write products and sizes, and the `admin_create_product` /
+`admin_update_product` functions save a product and its sizes in one
+transaction. Roles can't be changed through the API.
+
 ## Rate limiting
 
 Checkout attempts are limited (settings in `lib/rate-limit.ts`):
@@ -123,6 +153,9 @@ app/                      Routes (each folder = a URL)
   cart/page.tsx           Cart page  →  /cart
   checkout/page.tsx       Checkout page  →  /checkout
   checkout/actions.ts     Server Action that places the demo order
+  login/                  Admin login page and sign-in/sign-out actions
+  admin/                  Admin pages (product list, create, edit)
+  api/admin/products/     Admin product endpoints (POST, PATCH, DELETE)
   not-found.tsx           404 page for unknown URLs
   error.tsx               Friendly error page if something crashes
   global-error.tsx        Error page if the whole layout fails (e.g. database down)
@@ -138,6 +171,12 @@ lib/checkout.ts           Checkout validation rules (Zod)
 lib/checkout.test.ts      Unit tests for the checkout validation
 lib/rate-limit.ts         Rate-limit settings, IP + hashing helpers
 lib/rate-limit.test.ts    Unit tests for the rate-limit helpers
+lib/auth.ts               Server-side "is this an admin?" checks
+lib/admin-api.ts          Guard for admin endpoints (Origin + login + role)
+lib/admin-products.ts     Admin product queries (incl. hidden products, stock)
+lib/admin-product-schema.ts  Product validation rules (Zod)
+lib/supabase/session.ts   Supabase client using the login cookie
+proxy.ts                  Keeps login sessions fresh on /login and /admin
 lib/cart.ts               Cart logic as pure functions (add, update, subtotal…)
 lib/cart.test.ts          Unit tests for the cart logic
 lib/copy.ts               All visible text (brand name, labels) in one place
@@ -201,7 +240,13 @@ Done (rate limiting):
 - Per-visitor and shop-wide limits on checkout attempts, stored in the
   database with hashed visitor IDs.
 
+Done (admin):
+
+- Admin login with roles; product list, create, edit and delete for admins.
+
 Not built yet / known gaps:
+
+- Product image galleries (next stage)
 
 - Real payments, order emails, accounts, order history
 - CAPTCHA / bot protection (planned option: Cloudflare Turnstile)
