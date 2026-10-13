@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Make Tailwind's `font-sans` use the Geist font loaded in app/layout.tsx. */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+}
