@@ -78,6 +78,7 @@ interface CartContextValue {
   updateQuantity: (variantId: string, quantity: number) => void;
   removeItem: (variantId: string) => void;
   removeUnavailable: () => void;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -123,6 +124,9 @@ export function CartProvider({
       },
       removeUnavailable() {
         writeStoredCart(validItems);
+      },
+      clearCart() {
+        writeStoredCart([]);
       },
     };
   }, [raw, status, catalogue]);

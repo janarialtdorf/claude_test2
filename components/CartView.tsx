@@ -127,7 +127,12 @@ export function CartView() {
               <span>{formatPrice(cart.subtotalCents, cart.currency ?? "EUR")}</span>
             </div>
             <p className="mt-4 text-sm text-stone-600">{copy.cart.notAnOrder}</p>
-            <p className="mt-2 text-sm text-stone-600">{copy.cart.checkoutComing}</p>
+            <Link
+              href="/checkout"
+              className="mt-6 block w-full rounded-md bg-stone-900 px-5 py-3 text-center font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+            >
+              {copy.cart.goToCheckout}
+            </Link>
           </section>
         </div>
       )}

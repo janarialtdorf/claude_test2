@@ -9,7 +9,7 @@
 // Note: loading everything at once is fine for a few dozen products. A large
 // shop would query only what each page needs.
 
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CartCatalogue } from "@/types/cart";
 import type { Category, Product, Size } from "@/types/product";
@@ -21,9 +21,14 @@ interface Catalogue {
   products: Product[];
 }
 
+// Name for this cached data, so a Server Action can refresh it on demand
+// (e.g. right after an order changes the stock).
+export const CATALOGUE_CACHE_TAG = "catalogue";
+
 async function getCatalogue(): Promise<Catalogue> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(CATALOGUE_CACHE_TAG);
 
   const supabase = createSupabaseServerClient();
 

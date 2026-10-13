@@ -254,7 +254,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      place_demo_order: {
+        Args: {
+          p_address_line1: string
+          p_address_line2: string
+          p_city: string
+          p_country: string
+          p_customer_name: string
+          p_email: string
+          p_items: Json
+          p_postal_code: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

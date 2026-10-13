@@ -2,8 +2,8 @@
 
 A learning project: a responsive clothing storefront built with Next.js.
 
-> **Demo only.** All products are sample data. The cart lives in your
-> browser and is not an order. There is no checkout, payment or real ordering yet.
+> **Demo only.** All products are sample data. Checkout creates clearly
+> labelled **demo orders**: no payment is taken and nothing is shipped.
 
 ## Tech stack
 
@@ -11,6 +11,7 @@ A learning project: a responsive clothing storefront built with Next.js.
 - React 19 and TypeScript (strict mode)
 - Tailwind CSS 4
 - Supabase (PostgreSQL) for the product catalogue, via `@supabase/supabase-js`
+- Zod for validating form input on the server
 - Vitest for unit tests
 - npm (use npm only, not yarn/pnpm/bun)
 
@@ -24,10 +25,15 @@ Run these commands in the project folder (the one containing `package.json`):
 npm install
 ```
 
-Copy `.env.example` to `.env.local` and fill in your Supabase project URL and
-**publishable** key (Supabase dashboard → Project Settings → API Keys).
-`.env.local` is ignored by Git — never commit it, and never put the secret key
-or database password in it unless a feature needs them.
+Copy `.env.example` to `.env.local` and fill in the values from the Supabase
+dashboard → Project Settings → API Keys:
+
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` —
+  public by design, used to read the catalogue.
+- `SUPABASE_SECRET_KEY` — **secret**, used only on the server to place orders.
+  Never commit it, share it, or give it a `NEXT_PUBLIC_` prefix.
+
+`.env.local` is ignored by Git.
 
 Set up the database (see below), then start the site:
 
@@ -60,6 +66,11 @@ the public can only read published products, categories and sizes (sizes show
 in stock yes/no, never exact stock). Orders can't be read or written by the
 public at all.
 
+**Orders** are created by the database function `place_demo_order`, which
+only the server (secret key) may call. In one transaction it checks the items
+and stock, takes prices from the `products` table, saves the order with
+price/name snapshots, and reduces stock. If anything fails, nothing is saved.
+
 `npm run build` loads the catalogue from Supabase, so it needs internet access
 and the variables in `.env.local`.
 
@@ -85,6 +96,8 @@ app/                      Routes (each folder = a URL)
   products/page.tsx       Product listing  →  /products?category=tops
   products/[slug]/        Product detail  →  /products/classic-cotton-t-shirt
   cart/page.tsx           Cart page  →  /cart
+  checkout/page.tsx       Checkout page  →  /checkout
+  checkout/actions.ts     Server Action that places the demo order
   not-found.tsx           404 page for unknown URLs
   error.tsx               Friendly error page if something crashes
   global-error.tsx        Error page if the whole layout fails (e.g. database down)
@@ -92,8 +105,12 @@ components/               Reusable UI (header, product card, mobile menu…)
   CartProvider.tsx        Shares the cart with all pages, saves it in localStorage
   AddToCart.tsx           Size picker + "Add to cart" on product pages
   CartView.tsx            Cart page contents (quantities, remove, subtotal)
+  CheckoutForm.tsx        Delivery form, order summary and confirmation
 lib/products.ts           Reads the catalogue from Supabase (cached), the only data access point
-lib/supabase/server.ts    Server-only Supabase client
+lib/supabase/server.ts    Server-only Supabase client (publishable key, read-only)
+lib/supabase/admin.ts     Server-only Supabase client (secret key, places orders)
+lib/checkout.ts           Checkout validation rules (Zod)
+lib/checkout.test.ts      Unit tests for the checkout validation
 lib/cart.ts               Cart logic as pure functions (add, update, subtotal…)
 lib/cart.test.ts          Unit tests for the cart logic
 lib/copy.ts               All visible text (brand name, labels) in one place
@@ -122,7 +139,10 @@ supabase/seed.sql         DEMO products, categories and sizes
   prices.** Prices are looked up in the catalogue every time, and saved data
   is validated on load (bad entries dropped, quantities limited to 1–10).
   A browser cart is not trusted: a future checkout must recheck everything
-  on the server.
+  on the server — which checkout does.
+- **The database decides the order total.** The browser sends only size IDs
+  and quantities; `place_demo_order` calculates prices and totals itself.
+  The cart's subtotal is only a preview.
 
 ## What's done / what's next
 
@@ -143,8 +163,17 @@ Done (database):
 - Supabase schema for categories, products, sizes, orders and order items,
   with Row Level Security; storefront reads the catalogue from the database.
 
-Not built yet:
+Done (checkout):
 
-- Checkout, order creation (server-side price and stock checks) — the order
-  tables exist but stay locked until then
+- Demo checkout with validated delivery details (Estonia only), server-side
+  order creation in one transaction (prices, totals and stock checked in the
+  database), stock reduced on order, demo confirmation, cart cleared.
+
+Not built yet / known gaps:
+
+- Real payments, order emails, accounts, order history
+- **Rate limiting** — required before any public deployment (anyone could
+  otherwise spam demo orders and use up the demo stock)
+- Double submits are blocked in the browser; a server-side idempotency key
+  would also protect against network retries
 - Sorting, real product images, informational pages (About, Shipping…)
