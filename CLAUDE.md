@@ -372,8 +372,13 @@ the current task.
 -   Inspect `git status` before editing if the repository uses Git.
 -   Do not discard, reset, or overwrite uncommitted user changes.
 -   Keep changes focused and reviewable.
--   Do not create commits, push to a remote, deploy, or publish without
-    the user's explicit request.
+-   After each major feature or milestone is implemented and its checks
+    (type check, lint, build) pass, commit and push it to `origin`
+    (https://github.com/janarialtdorf/claude_test2, branch `main`) using
+    Conventional Commits messages (`feat:`, `fix:`, `docs:`,
+    `refactor:`, `chore:`). Do not commit half-finished or failing work.
+-   Otherwise, do not create commits, push to a remote, deploy, or
+    publish without the user's explicit request.
 -   Never place secrets, real customer data, database dumps, or private
     keys in commits.
 -   If asked to commit, summarize the intended changes and check the
